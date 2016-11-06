@@ -1,33 +1,28 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(serial)
 
-## Put all binary files into /bin and libraries into /lib
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
-set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
-set(ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-
-## Set compiler to use c++ 11 features
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX14)
-CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
-CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
-if(COMPILER_SUPPORTS_CXX14)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
-elseif(COMPILER_SUPPORTS_CXX11)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-elseif(COMPILER_SUPPORTS_CXX0X)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-else()
-	message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++14 or C++11 support. Please use a different C++ compiler.")
-endif()
+# Find catkin
+find_package(catkin REQUIRED)
 
 if(APPLE)
 	find_library(IOKIT_LIBRARY IOKit)
 	find_library(FOUNDATION_LIBRARY Foundation)
 endif()
 
-## Include headers
-include_directories(include)
+if(UNIX AND NOT APPLE)
+    # If Linux, add rt and pthread
+    catkin_package(
+        LIBRARIES ${PROJECT_NAME}
+        INCLUDE_DIRS include
+        DEPENDS rt pthread
+    )
+else()
+    # Otherwise normal call
+    catkin_package(
+        LIBRARIES ${PROJECT_NAME}
+        INCLUDE_DIRS include
+    )
+endif()
 
 ## Sources
 set(serial_SRCS
@@ -63,3 +58,21 @@ endif()
 add_executable(serial_example examples/serial_example.cc)
 add_dependencies(serial_example ${PROJECT_NAME})
 target_link_libraries(serial_example ${PROJECT_NAME})
+
+## Include headers
+include_directories(include)
+
+## Install executable
+install(TARGETS ${PROJECT_NAME}
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+)
+
+## Install headers
+install(FILES include/serial/serial.h include/serial/v8stdint.h
+  DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}/serial)
+
+## Tests
+if(CATKIN_ENABLE_TESTING)
+    add_subdirectory(tests)
+endif()

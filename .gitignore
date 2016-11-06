@@ -1,3 +1,9 @@
+# Temporary files/folders
+build
+*~
+*.*~
+
+# Legacy ignore from original project
 .*
 .DS_Store
 *.coverage
